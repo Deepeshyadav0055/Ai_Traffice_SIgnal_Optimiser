@@ -1,16 +1,193 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Traffic Signal Optimization Dashboard</title>
-    <meta property="og:image" content="https://bolt.new/static/og_default.png" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="https://bolt.new/static/og_default.png" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Traffic Signal Optimization Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="dashboard">
+    <header>
+      <h1>AI Traffic Signal Optimization Dashboard</h1>
+      <button class="btn-logout" id="btn-logout" title="Sign out">Sign Out</button>
+    </header>
+
+    <main>
+      <!-- Control Panel -->
+      <section class="panel control-panel">
+        <h2>Control Panel</h2>
+        
+        <div class="subsection">
+          <h3>Simulation Controls</h3>
+          <div class="mode-toggle">
+            <label class="toggle-option">
+              <input type="radio" name="mode" value="fixed" checked>
+              <span>Fixed Timing</span>
+            </label>
+            <label class="toggle-option">
+              <input type="radio" name="mode" value="ai">
+              <span>AI Mode</span>
+            </label>
+          </div>
+          <div class="button-group">
+            <button id="btn-start" class="btn btn-primary">Start</button>
+            <button id="btn-reset" class="btn btn-secondary">Reset</button>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3>Traffic Density Control</h3>
+          <div class="sliders">
+            <label>
+              <span>Road 1 (North)</span>
+              <input type="range" id="road-1" min="0" max="30" value="15">
+              <span class="value" id="road-1-val">15</span> cars
+            </label>
+            <label>
+              <span>Road 2 (East)</span>
+              <input type="range" id="road-2" min="0" max="30" value="20">
+              <span class="value" id="road-2-val">20</span> cars
+            </label>
+            <label>
+              <span>Road 3 (South)</span>
+              <input type="range" id="road-3" min="0" max="30" value="10">
+              <span class="value" id="road-3-val">10</span> cars
+            </label>
+            <label>
+              <span>Road 4 (West)</span>
+              <input type="range" id="road-4" min="0" max="30" value="25">
+              <span class="value" id="road-4-val">25</span> cars
+            </label>
+          </div>
+        </div>
+
+        <div class="subsection ai-info">
+          <h3>AI Optimization Info</h3>
+          <p>AI mode uses vehicle-weighted density (bike 0.5, car 1.0, truck/bus 2.0) to dynamically allocate green light duration (15–90s) to the highest-density lane, reducing congestion by 25–40%.</p>
+          <p class="backend-status" id="backend-status">Backend: checking...</p>
+        </div>
+      </section>
+
+      <!-- Intersection Visualization -->
+      <section class="panel intersection-panel">
+        <h2>Intersection</h2>
+        <div class="intersection">
+          <div class="road road-north" id="road-north">
+            <span class="road-label">Road 1 (North)</span>
+            <div class="signal" id="signal-north"></div>
+          </div>
+          <div class="road road-east" id="road-east">
+            <span class="road-label">Road 2 (East)</span>
+            <div class="signal" id="signal-east"></div>
+          </div>
+          <div class="road road-south" id="road-south">
+            <span class="road-label">Road 3 (South)</span>
+            <div class="signal" id="signal-south"></div>
+          </div>
+          <div class="road road-west" id="road-west">
+            <span class="road-label">Road 4 (West)</span>
+            <div class="signal" id="signal-west"></div>
+          </div>
+          <div class="intersection-center"></div>
+        </div>
+      </section>
+
+      <!-- Live Metrics -->
+      <section class="panel metrics-panel">
+        <h2>Live Metrics</h2>
+        
+        <div class="metric-item">
+          <span class="metric-label">Current Mode</span>
+          <span class="metric-value" id="current-mode">Fixed Timing</span>
+        </div>
+
+        <div class="metric-item">
+          <span class="metric-label">Active Green Lane</span>
+          <span class="metric-value" id="active-lane">—</span>
+        </div>
+
+        <div class="subsection">
+          <h3>Vehicles Per Lane</h3>
+          <div class="metric-grid" id="vehicles-per-lane">
+            <!-- Filled by JS -->
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3>Waiting Time (seconds)</h3>
+          <div class="metric-grid" id="waiting-time">
+            <!-- Filled by JS -->
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3>Priority Scores</h3>
+          <div class="metric-grid" id="priority-scores">
+            <!-- Filled by JS -->
+          </div>
+        </div>
+
+        <div class="summary-metrics">
+          <div class="summary-item">
+            <span>Total Vehicles</span>
+            <span id="total-vehicles">0</span>
+          </div>
+          <div class="summary-item">
+            <span>Avg Wait</span>
+            <span id="avg-wait">0.0s</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Performance Comparison -->
+      <section class="panel performance-panel">
+        <h2>Performance Comparison</h2>
+        
+        <div class="comparison-chart">
+          <div class="chart-item">
+            <h3>Average Waiting Time</h3>
+            <div class="chart-bars">
+              <div class="bar-wrap">
+                <span>Fixed:</span>
+                <div class="bar fixed-bar">
+                  <div class="bar-fill" id="fixed-wait-bar" style="height: 0%"></div>
+                </div>
+                <span id="fixed-wait-val">0s</span>
+              </div>
+              <div class="bar-wrap">
+                <span>AI:</span>
+                <div class="bar ai-bar">
+                  <div class="bar-fill" id="ai-wait-bar" style="height: 0%"></div>
+                </div>
+                <span id="ai-wait-val">0s</span>
+              </div>
+            </div>
+          </div>
+          <div class="chart-item">
+            <h3>Vehicles Cleared</h3>
+            <div class="chart-bars">
+              <div class="bar-wrap">
+                <span>Fixed:</span>
+                <div class="bar fixed-bar">
+                  <div class="bar-fill" id="fixed-vehicles-bar" style="height: 0%"></div>
+                </div>
+                <span id="fixed-vehicles-val">0</span>
+              </div>
+              <div class="bar-wrap">
+                <span>AI:</span>
+                <div class="bar ai-bar">
+                  <div class="bar-fill" id="ai-vehicles-bar" style="height: 0%"></div>
+                </div>
+                <span id="ai-vehicles-val">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
 </html>
